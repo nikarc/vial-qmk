@@ -1,25 +1,56 @@
 #include "MiniVan20221213055608.h"
+#include QMK_KEYBOARD_H
+
 enum custom_keycodes {
   M_IME = SAFE_RANGE,
 };
 
+static uint8_t mod_state;
+bool arrow_or_letter_key(uint16_t direction, uint16_t key, uint8_t mod_state, keyrecord_t *record) {
+    static bool ctrl_registered;
+
+    if (record->event.pressed) {
+        if (mod_state & MOD_MASK_CTRL) {
+            unregister_mods(MOD_MASK_CTRL);
+            register_code(direction);
+            ctrl_registered = true;
+            set_mods(mod_state);
+            return false;
+        }
+    } else {
+        if (ctrl_registered) {
+            unregister_code(direction);
+            ctrl_registered = false;
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    return true;
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed) {
+    mod_state = get_mods();
     switch(keycode) {
-      case M_IME:
-        SEND_STRING(SS_DOWN(X_LSFT)SS_DOWN(X_LALT));
-        return false;
+        case KC_H: {
+                return arrow_or_letter_key(KC_LEFT, KC_H, mod_state, record);
+            }
+        case KC_J: {
+                return arrow_or_letter_key(KC_DOWN, KC_J, mod_state, record);
+            }
+        case KC_K: {
+                return arrow_or_letter_key(KC_UP, KC_K, mod_state, record);
+            }
+        case KC_L: {
+                return arrow_or_letter_key(KC_RIGHT, KC_L, mod_state, record);
+            }
+        default:
+            return true;
     }
-  }
-  else {
-    switch(keycode) {
-      case M_IME:
-        SEND_STRING(SS_UP(X_LSFT)SS_UP(X_LALT));
-        return false;
-    }
-  }
-  return true;
+    return true;
 };
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* [0] = LAYOUT( */
   /*         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC */
